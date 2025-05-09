@@ -2,6 +2,15 @@
 
 A CLI tool to run DiskSPD benchmarks on Kubernetes clusters. This tool supports running benchmarks on both single and multiple nodes.
 
+## Requirements
+
+We recommend using the provided dev container. This comes preinstalled with mise and uv.
+
+If you prefer to run locally:
+
+- Install [uv](https://docs.astral.sh/uv/getting-started/installation/)
+- Instll Python 3.13
+
 ## Installation
 
 Clone the repository and run with `uv`:
@@ -19,6 +28,7 @@ Or install the package:
 
 ```bash
 # Install with uv
+uv sync
 uv pip install .
 
 # Run the installed package
@@ -62,6 +72,6 @@ uv run main.py multi --nodes 3 --storage-class "your-storage-class" --duration 6
 
 ## Requirements
 
-- Python 3.9+
+- Python 3.13+
 - Kubernetes cluster with `kubectl` configured
 - Storage classes set up in the Kubernetes cluster

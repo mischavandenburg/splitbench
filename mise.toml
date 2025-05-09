@@ -1,5 +1,4 @@
 [tools]
-azure-cli = "latest"
 k9s = "latest"
 kubectl = "latest"
 python = "3.13"
