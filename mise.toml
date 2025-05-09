@@ -2,7 +2,7 @@
 azure-cli = "latest"
 k9s = "latest"
 kubectl = "latest"
-python = "3.10.11"
+python = "3.13"
 uv = "latest"
 
 [settings]
