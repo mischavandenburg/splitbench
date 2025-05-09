@@ -1,0 +1,52 @@
+#!/bin/bash
+
+# Number of worker nodes
+NUM_NODES=46
+MIDPOINT=$((NUM_NODES / 2))
+
+# Read the templates into variables
+TEMPLATE=$(cat multi-node-fio.yaml)
+TEMPLATE2=$(cat multi-node-fio2.yaml)
+
+# Create results directory
+mkdir -p results
+
+# Modified function to wait and capture logs
+wait_and_capture() {
+  local node=$1
+  kubectl wait --for=condition=complete "job/diskspd-node-$node" --timeout=2h
+  if [ $? -eq 0 ]; then
+    # Immediately capture logs after the job completes, before pod termination
+    kubectl logs -l "node-test=node-$node" --tail=500 >"results/node-$node.txt"
+  fi
+}
+
+# Deploy jobs for first half using TEMPLATE
+for i in $(seq 1 $MIDPOINT); do
+  echo "Deploying job for node $i using TEMPLATE"
+  echo "${TEMPLATE}" | sed "s/\${NODE_NUM}/$i/g" | kubectl apply -f -
+  # sleep 0.5
+done
+
+# Deploy jobs for second half using TEMPLATE2
+for i in $(seq $((MIDPOINT + 1)) $NUM_NODES); do
+  echo "Deploying job for node $i using TEMPLATE2"
+  echo "${TEMPLATE2}" | sed "s/\${NODE_NUM}/$i/g" | kubectl apply -f -
+  # sleep 0.5
+done
+
+echo "Waiting for jobs to complete and capturing logs..."
+# Start all wait_and_capture functions in parallel
+for i in $(seq 1 $NUM_NODES); do
+  wait_and_capture $i &
+done
+wait
+
+# echo "All jobs completed and logs collected. Generating summary..."
+# # Print a summary
+# echo "Summary of IOPS across all nodes:"
+# for i in $(seq 1 $NUM_NODES); do
+#   echo "Node $i ($([ $i -le $MIDPOINT ] && echo "TEMPLATE1" || echo "TEMPLATE2")):"
+#   grep -A 2 "IOPS (Read/Write)" "results/node-$i.txt" || echo "No data found"
+#   echo "---"
+# done

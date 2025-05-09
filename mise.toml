@@ -1,0 +1,11 @@
+[tools]
+azure-cli = "latest"
+k9s = "latest"
+kubectl = "latest"
+python = "3.10.11"
+uv = "latest"
+
+[settings]
+python.uv_venv_auto = true
+idiomatic_version_file_enable_tools = ["python"]
+experimental = true

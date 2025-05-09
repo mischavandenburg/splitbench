@@ -1,0 +1,68 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: diskspd-node-${NODE_NUM}
+spec:
+  parallelism: 1
+  completions: 1
+  template:
+    metadata:
+      labels:
+        diskspd: diskspd-multi
+        node-test: node-${NODE_NUM}
+    spec:
+      affinity:
+        # Ensure pods spread across nodes
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: diskspd
+                    operator: In
+                    values:
+                      - diskspd-multi
+              topologyKey: "kubernetes.io/hostname"
+      containers:
+        - name: diskspd
+          image: ghcr.io/mischavandenburg/diskspd:latest
+          args:
+            - "-b64K"     # Block size of 64K
+            - "-r64K"     # Random IO with 64K alignment
+            - "-o16"      # Outstanding IO requests per target per thread
+            - "-t4"       # Number of threads
+            - "-d60"      # Test duration of 60 seconds
+            - "-Sh"       # Disable software and hardware caching
+            - "-c1G"      # Create a 1GB test file
+            - "-w100"     # Write percentage
+            - "-L"        # Capture latency information
+            - "/volume/testfile"
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: vol
+              mountPath: /volume/
+            - name: dev
+              mountPath: /dev
+      restartPolicy: Never
+      volumes:
+        - name: vol
+          persistentVolumeClaim:
+            claimName: diskspd-pvc-node-${NODE_NUM}
+        - name: dev
+          hostPath:
+            path: /dev
+  backoffLimit: 0
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: diskspd-pvc-node-${NODE_NUM}
+spec:
+  storageClassName: ${STORAGE_CLASS}
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
